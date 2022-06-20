@@ -1,18 +1,28 @@
-# CPP 前置
+# 代码风格
 
-1.程序后缀 .cc(linux下) or .cpp(windows下)
+这里写点上课时不时会提到得代码格式（属于不定期补充的那种）
+
+本人强迫症 这个部分重要程度绝对是**t0**
+
+
+
+# C++ 前置
+
+1.文件后缀 .cc(linux下) or .cpp(windows下)
 
 2.编译指令
 
-$ gcc *.cc [-o name]
+​    $ gcc *.cc [-o name]
 
 3.instal
 
-$sudo apt install g++
+​    $sudo apt install g++
 
 # 命名空间
 
 ## namespace 
+
+作用：解决命名冲突
 
 ```c++
 namespace name
@@ -281,20 +291,20 @@ void test(){
     
     //上面是只有单个变量，下面演示数组
     
-    int * arr = new int[10]();//小括号内填值进行初始化
+    int * arr = new int[10]();//小括号内填值进行初始化 中括号内填元素的大小
     delete [] arr;//回收整个数组的空间，需要加[]，不加会报错
 }
 ```
 
 ## 与c的异同
 
-相同点：
+### 相同点：
 
 都用来申请堆空间
 
 必须成对出现，否则会发生内存泄漏
 
-不同点：
+### 不同点：
 
 new/delete是C++的表达式，malloc/free是C的库函数
 
@@ -306,7 +316,23 @@ reference 本质上就是一个变量的别名。
 
 与某一个实体绑定到一起，对引用的修改就是对变量的修改
 
+```c++
+void tese(){
+    int num = 1;
+    int & ref = num;//ref就是num的别名 对ref的操作就是对num的操作
+}
+```
+
 引用本身不能单独存在（虚空索敌吗），必须绑定一个实体，一经绑定不能改变对象
+
+右值没法取地址
+
+```c++
+void test(){
+    int & ref = 1;//error 非const引用不能绑定到一个右值,因为这个值不在内存中
+    const int & ref2 = 1;//ok
+}
+```
 
 **引用的底层实现是指针常量**，他的出现就是减少指针的使用
 
@@ -412,4 +438,288 @@ int & func2(){
 从内存分配上看：程序为指针变量分配内存区域，而引用不需要分配内存区域。
 
 # 强制转换
+
+C和C++都有强制转换的写法
+
+## C
+
+```C
+TYPE a = (TYPE) EXPRESSION
+```
+
+C的转换比较随意，啥都能转，比如你可以把一个指向const对象的指针转换成指向非const对象的指针。
+
+## C++
+
+C++将强制转换分成了不同的情况来讨论
+
+### static_cast
+
+最常用的转换，在指针之间做转换，经常就是在（void *）和其他（type *）类型之间的指针做转换
+
+```c++
+void test(){
+    int iNumber = 100； 
+    float fNumber = 0； 
+    fNumber = (float) iNumber；//C风格 
+    fNumber = static_cast<float>(iNumber);//c++风格
+        
+    void *pVoid = malloc(sizeof(int)); 
+    int *pInt = static_cast<int*>(pVoid); 
+    *pInt = 1;
+}
+```
+
+可以用$ grep (文件名.cc) * -n 来查找强制转换的位置
+
+### const_cast
+
+去除常量属性，一般情况下不太推荐使用（下面这个实例，学了以后忘掉就行😂）
+
+```c++
+void func(int * p){
+    *p = 100;
+    cout << "*p:" << *p << endl;
+}
+
+void test(){
+    const int number = 1;
+    cout << "number:" << number << endl;
+    // number:1
+    func(const_cast<int *>(&number));
+    // *p:100
+    cout << "number:" << number << endl;
+    // number:1
+}
+```
+
+![image-20220620134507406](pages/image-20220620134507406.png)
+
+可以发现number的值经历过func()函数以后并没有变成100，这是const_cast比较特别的地方
+
+取消了const，但没有完全取消
+
+所以这么反直觉的函数一般情况下不建议使用，免得真有人以为能把const取消
+
+### dynamic_cast
+
+用在派生类与基类之间做转换，等我学了多态与继承再回来补充
+
+### reinterpret_cast
+
+在任意类型间做转换，跟C差不多，不常用，不做介绍
+
+# 函数重载
+
+当函数名字相同，返回值相同，但参数不同，称为函数重载
+
+实现原理：名字改编（name mangling）
+
+具体步骤：当函数名相同时，会根据函数参数的类型、顺序、个数不同进行改编
+
+
+
+这里是c所没有的最新最劲爆最hot的写法
+
+```c++
+int add(int x, int y){
+    return x + y;
+}
+
+int add(int x, int y, int z){ // overload
+    return x + y + z;
+}
+
+int main(){
+    int a = 1, b = 2, c = 3;
+    printf("add(a,b) = %d\n", add(a,b));
+    printf("add(a,b,c) = %d\n", add(a,b,c));
+    
+    return 0;
+}
+```
+
+![image-20220620141519335](pages/image-20220620141519335.png)
+
+
+
+让我在编译时加上-c来看看编译时发生了什么
+
+![image-20220620142202943](pages/image-20220620142202943.png)
+
+可以发现有有两个函数
+
+_Z3addii
+
+_Z3addiii
+
+将add函数改编后，以C++的方式进行了调用
+
+# extern "C" ：C++和C混合编程
+
+刚才讲了函数重载，但是这是C++区别于C独有的写法
+
+那么，当有奇怪的需求，比如说想用C的方式进行函数调用该怎么操作呢
+
+将这些代码加入到extern "C"{}大括号范围内
+
+```c++
+extern "C"
+{
+    
+int add(int x, int y){
+    return x + y;
+}
+    
+}//end of extern C
+```
+
+那么在extern "C"范围内的函数会以C的方式进行调用，不会进行函数改编
+
+C++和C进行混合编程就是这样的
+
+
+
+但我这个懒鬼想直接把代码复制到C文件中，但是extern "C"又不是C的函数
+
+怎么识别编译环境来做到兼容性更高呢
+
+来做点小优化
+
+```c++
+#ifdef __cplusplus  //这是只在C++编译环境下才有的宏，C编译环境下没有
+extern "C"
+{
+#endif
+    
+int add(int x, int y){
+    return x + y;
+}
+
+#ifdef __cplusplus
+}//end of extern C
+#endif
+```
+
+只要在C++的函数前增加识别编译环境的语句就行
+
+直接复制到C文件中也可以跑通
+
+# 默认参数
+
+写函数的时候经常会传不止一个参数进去，但是往往好几次调用只有一两次会改变一下参数，有什么办法可以省事呢
+
+```c++
+int add(int x, int y = 0, int z = 0){
+    return x + y + z;
+}
+
+int main(){
+    int a = 1, b = 2, c = 3;
+    cout << "add(a) : " << add(a) << endl;
+    cout << "add(a,b) : " << add(a,b) << endl;
+    cout << "add(a,b,c) : " << add(a,b,c) << endl;
+}
+```
+
+![image-20220620151616417](pages/image-20220620151616417.png)
+
+ 函数中设置默认参数默认从最右边开始，可以所有参数都设置默认参数，但不支持只设中间参数的写法
+
+```c++
+int add(int x, int y, int z = 0); //ok
+int add(int x, int y = 0, int z); //error
+int add(int x = 0, int y = 0, int z = 0); //ok
+```
+
+所以记得把最不常用的缺省参数放最右
+
+如果是将函数的声明和实现分开，那么==将默认参数写在声明中，实现的时候不写==，否则会报错
+
+```c++
+int add(int x = 0, int y = 0, int z = 0)；
+    
+int main(){
+    int a = 1, b = 2, c = 3;
+    cout << "add(a) : " << add(a) << endl;
+    cout << "add(a,b) : " << add(a,b) << endl;
+    cout << "add(a,b,c) : " << add(a,b,c) << endl;
+}
+
+int add(int x, int y, int z){
+    return x + y + z;
+}
+```
+
+# bool
+
+（我怎么记得C里也有bool类型来着）
+
+不是1就是0的类型，没什么好多说的，直接上实例把
+
+
+
+```c++
+void test(){
+    bool b1 = 0;
+    bool b2 = 1;
+    bool b3 = 3;
+    bool b4 = true;
+    bool b5 = false;
+    bool b6 = -1;
+    cout << "size of bool :" << sizeof(bool) << endl;
+    cout << "b1:" << b1 << endl
+         << "b2:" << b2 << endl
+         << "b3:" << b3 << endl
+         << "b4:" << b4 << endl
+         << "b5:" << b5 << endl
+         << "b6:" << b6 << endl;
+}
+```
+
+![image-20220620154337017](pages/image-20220620154337017.png)
+
+0就是0，非0都是1
+
+# inline
+
+C++提出了inline函数，inline函数在编译时，进行语句的替换，功能与宏函数类似
+
+==inline要放在头文件中，即声明函数之前加上inline，而且必须要实现，不能单独开一个模块来实现==
+
+```c++
+//add.hpp
+
+inline int add(int x, int y){
+    return x + y;
+}
+```
+
+inline可以像宏定义那样做到直接替换从而节省调用函数的开销
+
+但是当函数内部过大或是函数内有循环的话不建议使用inline，会造成代码膨胀，导致收益并不高
+
+
+
+# 内存布局
+
+~~怎么说这都是我最讨厌的一块，毕竟我的脑子又不是内存条的形状~~
+
+==为了面试复习，冲！==
+
+这部分跟C的差不多
+
+以32位系统为例，一个进程（用户态）在执行的时候，能够访问的是虚拟地址空间
+
+![image-20220620155115648](pages/image-20220620155115648.png)
+
+栈区：放函数、普通变量的
+
+堆区：放malloc、new开辟的出来的变量
+
+全局、静态区：static这些变量放这
+
+
+
+对这些感兴趣不如直接%p打印一下变量的位置就好
 

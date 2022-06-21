@@ -4,7 +4,73 @@
 
 本人强迫症 这个部分重要程度绝对是**t0**
 
+## 命名
 
+现在流行的命名方式两种，单词之间加下划线_；或是驼峰命名法——如果变量名字为多个单词那么单词首字母大写，如：AddResult
+
+```c++
+int myStudentCount;// 小驼峰法，即第一个字母小写，常用于变量、函数名
+class DataBassUser;// 大驼峰法，开头字母全大写，常用于类，属性，命名空间等
+char *my_first_name;// 下划线法，都小写
+```
+
+## 格式
+
+在命名空间中实体都顶格写 不需要缩进
+
+### 类和函数的定义写在头文件中，函数实现新开一个源文件写
+
+```c++
+//head.hh
+
+class Template(){
+public:
+    
+    void func1();
+    
+    void func2();
+    
+    void func3();
+
+private:
+    
+    int _iA;
+    double _iB;
+    char _iC[100];
+};
+```
+
+```c++
+//head.cc
+
+#include"head.hh"
+
+void Template::func1(){
+    ......;
+}
+
+void Template::func2(){
+    ......;
+}
+
+void Template::func3(){
+    ......;
+}
+```
+
+### 增添头文件的顺序：
+
+```c++
+#include"head.hh"  //先增加自定义的头文件
+
+#include<iostream> //再增加C++的头文件
+
+#include<stdio.h>  //然后增加C的头文件
+
+#include<log4cpp/Category.hh>//最后增加第三方库的头文件
+```
+
+为什么这么有讲究呢，因为编译时是先从当前目录进行查找，之后再从系统目录进行查找，而且头文件乱放出问题基本找不出原因
 
 # C++ 前置
 
@@ -511,7 +577,7 @@ void test(){
 
 # 函数重载
 
-当函数名字相同，返回值相同，但参数不同，称为函数重载
+当函数名字相同，返回值类型相同，但参数不同，称为函数重载
 
 实现原理：名字改编（name mangling）
 
